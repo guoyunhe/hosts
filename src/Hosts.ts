@@ -22,10 +22,10 @@ export type HostsLine =
   | { type: 'empty' };
 
 /**
- * Options for HostsManager
+ * Options for Hosts when used with file operations
  * @since 1.0.0
  */
-export interface HostsManagerOptions {
+export interface HostsOptions {
   /** Custom path to the hosts file. If not set, uses the default for the current OS. */
   path?: string;
   /** Encoding for read/write operations. Default: 'utf-8' */
@@ -33,10 +33,11 @@ export interface HostsManagerOptions {
 }
 
 /**
- * Manages hosts file reading, writing, and parsing across Windows, macOS, and Linux.
+ * Manages hosts file content and file operations across Windows, macOS, and Linux.
+ * Use static methods for content-only operations. Instantiate with options for file read/write.
  * @since 1.0.0
  */
-export class HostsManager {
+export class Hosts {
   /**
    * Gets the default hosts file path for the current operating system.
    * - Windows: C:\\Windows\\System32\\drivers\\etc\\hosts
@@ -123,7 +124,7 @@ export class HostsManager {
   }
 
   /**
-   * Returns only the entry lines (IP + hostnames), excluding comments and empty lines.
+   * Returns only the entry lines (IP + hostnames) from the given lines, excluding comments and empty lines.
    * @since 1.0.0
    */
   static getEntries(lines: HostsLine[]): HostsEntry[] {
@@ -137,7 +138,7 @@ export class HostsManager {
    * @since 1.0.0
    */
   static addEntry(lines: HostsLine[], ip: string, ...hostnames: string[]): HostsLine[] {
-    const entries = HostsManager.getEntries(lines);
+    const entries = Hosts.getEntries(lines);
     const existingIdx = entries.findIndex((e) => e.ip === ip);
 
     const newHostnames = [...new Set(hostnames)];
@@ -182,8 +183,8 @@ export class HostsManager {
   readonly #path: string;
   readonly #encoding: BufferEncoding;
 
-  constructor(options: HostsManagerOptions = {}) {
-    this.#path = options.path ?? HostsManager.getDefaultPath();
+  constructor(options: HostsOptions = {}) {
+    this.#path = options.path ?? Hosts.getDefaultPath();
     this.#encoding = options.encoding ?? 'utf-8';
   }
 
@@ -201,7 +202,7 @@ export class HostsManager {
    */
   async read(): Promise<HostsLine[]> {
     const content = await readFile(this.#path, this.#encoding);
-    return HostsManager.parse(content);
+    return Hosts.parse(content);
   }
 
   /**
@@ -209,7 +210,7 @@ export class HostsManager {
    * @since 1.0.0
    */
   async write(lines: HostsLine[]): Promise<void> {
-    const content = HostsManager.serialize(lines);
+    const content = Hosts.serialize(lines);
     await writeFile(this.#path, content, this.#encoding);
   }
 }

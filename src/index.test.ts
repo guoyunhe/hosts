@@ -1,26 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { HostsManager, type HostsLine } from '.';
+import { Hosts, type HostsLine } from '.';
 
-describe('HostsManager', () => {
+describe('Hosts', () => {
   describe('getDefaultPath', () => {
     it('returns Windows path on win32', () => {
       const original = process.platform;
       Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
-      expect(HostsManager.getDefaultPath()).toMatch(/[\\/]hosts$/);
+      expect(Hosts.getDefaultPath()).toMatch(/[\\/]hosts$/);
       Object.defineProperty(process, 'platform', { value: original, configurable: true });
     });
 
     it('returns /etc/hosts on darwin', () => {
       const original = process.platform;
       Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
-      expect(HostsManager.getDefaultPath()).toBe('/etc/hosts');
+      expect(Hosts.getDefaultPath()).toBe('/etc/hosts');
       Object.defineProperty(process, 'platform', { value: original, configurable: true });
     });
 
     it('returns /etc/hosts on linux', () => {
       const original = process.platform;
       Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
-      expect(HostsManager.getDefaultPath()).toBe('/etc/hosts');
+      expect(Hosts.getDefaultPath()).toBe('/etc/hosts');
       Object.defineProperty(process, 'platform', { value: original, configurable: true });
     });
   });
@@ -28,7 +28,7 @@ describe('HostsManager', () => {
   describe('parse', () => {
     it('parses entries with IP and hostnames', () => {
       const content = '127.0.0.1\tlocalhost\n192.168.1.1 router.local';
-      const lines = HostsManager.parse(content);
+      const lines = Hosts.parse(content);
       expect(lines).toHaveLength(2);
       expect(lines[0]).toEqual({ type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] });
       expect(lines[1]).toEqual({ type: 'entry', ip: '192.168.1.1', hostnames: ['router.local'] });
@@ -36,7 +36,7 @@ describe('HostsManager', () => {
 
     it('parses entries with multiple hostnames', () => {
       const content = '127.0.0.1\tlocalhost localhost.localdomain';
-      const lines = HostsManager.parse(content);
+      const lines = Hosts.parse(content);
       expect(lines[0]).toEqual({
         type: 'entry',
         ip: '127.0.0.1',
@@ -46,7 +46,7 @@ describe('HostsManager', () => {
 
     it('parses comments', () => {
       const content = '# comment line\n127.0.0.1 localhost # inline comment';
-      const lines = HostsManager.parse(content);
+      const lines = Hosts.parse(content);
       expect(lines[0]).toEqual({ type: 'comment', content: 'comment line' });
       expect(lines[1]).toEqual({
         type: 'entry',
@@ -58,7 +58,7 @@ describe('HostsManager', () => {
 
     it('parses empty lines', () => {
       const content = '127.0.0.1 localhost\n\n\n';
-      const lines = HostsManager.parse(content);
+      const lines = Hosts.parse(content);
       expect(lines).toHaveLength(4);
       expect(lines[1]).toEqual({ type: 'empty' });
       expect(lines[2]).toEqual({ type: 'empty' });
@@ -67,7 +67,7 @@ describe('HostsManager', () => {
 
     it('handles Windows line endings', () => {
       const content = '127.0.0.1\tlocalhost\r\n192.168.1.1\thost\r\n';
-      const lines = HostsManager.parse(content);
+      const lines = Hosts.parse(content);
       expect(lines.filter((l) => l.type === 'entry')).toHaveLength(2);
       expect(lines[0]).toEqual({ type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] });
       expect(lines[1]).toEqual({ type: 'entry', ip: '192.168.1.1', hostnames: ['host'] });
@@ -81,15 +81,15 @@ describe('HostsManager', () => {
         { type: 'comment', content: 'test' },
         { type: 'empty' },
       ];
-      const content = HostsManager.serialize(lines);
+      const content = Hosts.serialize(lines);
       expect(content).toBe('127.0.0.1\tlocalhost\n# test\n');
     });
 
     it('preserves round-trip', () => {
       const original = '127.0.0.1\tlocalhost\t# loopback\n\n# section';
-      const lines = HostsManager.parse(original);
-      const serialized = HostsManager.serialize(lines);
-      const reparsed = HostsManager.parse(serialized);
+      const lines = Hosts.parse(original);
+      const serialized = Hosts.serialize(lines);
+      const reparsed = Hosts.parse(serialized);
       expect(reparsed).toEqual(lines);
     });
   });
@@ -102,7 +102,7 @@ describe('HostsManager', () => {
         { type: 'empty' },
         { type: 'entry', ip: '::1', hostnames: ['ip6-localhost'] },
       ];
-      const entries = HostsManager.getEntries(lines);
+      const entries = Hosts.getEntries(lines);
       expect(entries).toHaveLength(2);
       expect(entries[0]).toEqual({ ip: '127.0.0.1', hostnames: ['localhost'] });
       expect(entries[1]).toEqual({ ip: '::1', hostnames: ['ip6-localhost'] });
@@ -112,14 +112,14 @@ describe('HostsManager', () => {
   describe('addEntry', () => {
     it('adds new entry when IP does not exist', () => {
       const lines: HostsLine[] = [{ type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] }];
-      const result = HostsManager.addEntry(lines, '192.168.1.1', 'router');
+      const result = Hosts.addEntry(lines, '192.168.1.1', 'router');
       expect(result).toHaveLength(2);
       expect(result[1]).toEqual({ type: 'entry', ip: '192.168.1.1', hostnames: ['router'] });
     });
 
     it('merges hostnames when IP exists', () => {
       const lines: HostsLine[] = [{ type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] }];
-      const result = HostsManager.addEntry(lines, '127.0.0.1', 'local', 'localhost.localdomain');
+      const result = Hosts.addEntry(lines, '127.0.0.1', 'local', 'localhost.localdomain');
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual({
         type: 'entry',
@@ -130,7 +130,7 @@ describe('HostsManager', () => {
 
     it('deduplicates hostnames', () => {
       const lines: HostsLine[] = [{ type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] }];
-      const result = HostsManager.addEntry(lines, '127.0.0.1', 'localhost', 'local');
+      const result = Hosts.addEntry(lines, '127.0.0.1', 'localhost', 'local');
       expect(result[0]!.type === 'entry' && result[0].hostnames).toEqual(['localhost', 'local']);
     });
   });
@@ -141,7 +141,7 @@ describe('HostsManager', () => {
         { type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] },
         { type: 'entry', ip: '192.168.1.1', hostnames: ['router'] },
       ];
-      const result = HostsManager.removeEntry(lines, '127.0.0.1');
+      const result = Hosts.removeEntry(lines, '127.0.0.1');
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual({ type: 'entry', ip: '192.168.1.1', hostnames: ['router'] });
     });
@@ -150,20 +150,20 @@ describe('HostsManager', () => {
       const lines: HostsLine[] = [
         { type: 'entry', ip: '127.0.0.1', hostnames: ['localhost', 'local'] },
       ];
-      const result = HostsManager.removeEntry(lines, 'local');
+      const result = Hosts.removeEntry(lines, 'local');
       expect(result[0]).toEqual({ type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] });
     });
 
     it('removes entire entry when last hostname is removed', () => {
       const lines: HostsLine[] = [{ type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] }];
-      const result = HostsManager.removeEntry(lines, 'localhost');
+      const result = Hosts.removeEntry(lines, 'localhost');
       expect(result).toHaveLength(0);
     });
   });
 
   describe('constructor', () => {
     it('accepts custom path', () => {
-      const manager = new HostsManager({ path: '/custom/hosts' });
+      const manager = new Hosts({ path: '/custom/hosts' });
       expect(manager.path).toBe('/custom/hosts');
     });
   });
