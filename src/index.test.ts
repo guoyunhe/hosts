@@ -30,8 +30,18 @@ describe('Hosts', () => {
       const content = '127.0.0.1\tlocalhost\n192.168.1.1 router.local';
       const lines = Hosts.parse(content);
       expect(lines).toHaveLength(2);
-      expect(lines[0]).toEqual({ type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] });
-      expect(lines[1]).toEqual({ type: 'entry', ip: '192.168.1.1', hostnames: ['router.local'] });
+      expect(lines[0]).toEqual({
+        type: 'entry',
+        ip: '127.0.0.1',
+        hostnames: ['localhost'],
+        lineNumber: 1,
+      });
+      expect(lines[1]).toEqual({
+        type: 'entry',
+        ip: '192.168.1.1',
+        hostnames: ['router.local'],
+        lineNumber: 2,
+      });
     });
 
     it('parses entries with multiple hostnames', () => {
@@ -41,18 +51,24 @@ describe('Hosts', () => {
         type: 'entry',
         ip: '127.0.0.1',
         hostnames: ['localhost', 'localhost.localdomain'],
+        lineNumber: 1,
       });
     });
 
     it('parses comments', () => {
       const content = '# comment line\n127.0.0.1 localhost # inline comment';
       const lines = Hosts.parse(content);
-      expect(lines[0]).toEqual({ type: 'comment', content: 'comment line' });
+      expect(lines[0]).toEqual({
+        type: 'comment',
+        content: 'comment line',
+        lineNumber: 1,
+      });
       expect(lines[1]).toEqual({
         type: 'entry',
         ip: '127.0.0.1',
         hostnames: ['localhost'],
         comment: 'inline comment',
+        lineNumber: 2,
       });
     });
 
@@ -60,17 +76,27 @@ describe('Hosts', () => {
       const content = '127.0.0.1 localhost\n\n\n';
       const lines = Hosts.parse(content);
       expect(lines).toHaveLength(4);
-      expect(lines[1]).toEqual({ type: 'empty' });
-      expect(lines[2]).toEqual({ type: 'empty' });
-      expect(lines[3]).toEqual({ type: 'empty' });
+      expect(lines[1]).toEqual({ type: 'empty', lineNumber: 2 });
+      expect(lines[2]).toEqual({ type: 'empty', lineNumber: 3 });
+      expect(lines[3]).toEqual({ type: 'empty', lineNumber: 4 });
     });
 
     it('handles Windows line endings', () => {
       const content = '127.0.0.1\tlocalhost\r\n192.168.1.1\thost\r\n';
       const lines = Hosts.parse(content);
       expect(lines.filter((l) => l.type === 'entry')).toHaveLength(2);
-      expect(lines[0]).toEqual({ type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] });
-      expect(lines[1]).toEqual({ type: 'entry', ip: '192.168.1.1', hostnames: ['host'] });
+      expect(lines[0]).toEqual({
+        type: 'entry',
+        ip: '127.0.0.1',
+        hostnames: ['localhost'],
+        lineNumber: 1,
+      });
+      expect(lines[1]).toEqual({
+        type: 'entry',
+        ip: '192.168.1.1',
+        hostnames: ['host'],
+        lineNumber: 2,
+      });
     });
   });
 

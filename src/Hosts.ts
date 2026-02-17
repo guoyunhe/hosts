@@ -13,13 +13,20 @@ export interface HostsEntry {
 }
 
 /**
- * A parsed line from the hosts file
+ * A parsed line from the hosts file.
+ * Use {@link HostsLine.type} to discriminate; other properties are set based on type.
  * @since 1.0.0
  */
-export type HostsLine =
-  | { type: 'entry'; ip: string; hostnames: string[]; comment?: string }
-  | { type: 'comment'; content: string }
-  | { type: 'empty' };
+export interface HostsLine {
+  type: 'entry' | 'comment' | 'empty';
+  id?: number;
+  /** For type 'entry' */
+  ip?: string;
+  hostnames?: string[];
+  comment?: string;
+  /** For type 'comment' */
+  content?: string;
+}
 
 /**
  * Options for Hosts when used with file operations
@@ -61,11 +68,13 @@ export class Hosts {
     const lines: HostsLine[] = [];
     const contentLines = content.split(/\r?\n/);
 
-    for (const line of contentLines) {
-      const trimmed = line.trimEnd();
+    for (let i = 0; i < contentLines.length; i++) {
+      const lineNumber = i + 1;
+      const rawLine = contentLines[i]!;
+      const trimmed = rawLine.trimEnd();
 
       if (trimmed === '') {
-        lines.push({ type: 'empty' });
+        lines.push({ type: 'empty', id: lineNumber });
         continue;
       }
 
@@ -73,7 +82,11 @@ export class Hosts {
       const hasComment = commentStart >= 0;
 
       if (commentStart === 0) {
-        lines.push({ type: 'comment', content: trimmed.slice(1).trimStart() });
+        lines.push({
+          type: 'comment',
+          content: trimmed.slice(1).trimStart(),
+          id: lineNumber,
+        });
         continue;
       }
 
@@ -81,13 +94,17 @@ export class Hosts {
       const inlineComment = hasComment ? trimmed.slice(commentStart + 1).trimStart() : undefined;
 
       if (dataPart === '') {
-        lines.push({ type: 'comment', content: inlineComment ?? '' });
+        lines.push({
+          type: 'comment',
+          content: inlineComment ?? '',
+          id: lineNumber,
+        });
         continue;
       }
 
       const tokens = dataPart.split(/\s+/).filter(Boolean);
       if (tokens.length === 0) {
-        lines.push({ type: 'empty' });
+        lines.push({ type: 'empty', id: lineNumber });
         continue;
       }
 
@@ -97,7 +114,8 @@ export class Hosts {
           type: 'entry',
           ip,
           hostnames,
-          comment: inlineComment,
+          ...(inlineComment !== undefined && { comment: inlineComment }),
+          id: lineNumber,
         });
       }
     }
@@ -114,7 +132,7 @@ export class Hosts {
       .map((line) => {
         if (line.type === 'empty') return '';
         if (line.type === 'comment') return line.content ? `# ${line.content}` : '#';
-        if (line.type === 'entry') {
+        if (line.type === 'entry' && line.ip !== undefined && line.hostnames !== undefined) {
           const main = [line.ip, ...line.hostnames].join('\t');
           return line.comment ? `${main}\t# ${line.comment}` : main;
         }
@@ -129,7 +147,10 @@ export class Hosts {
    */
   static getEntries(lines: HostsLine[]): HostsEntry[] {
     return lines
-      .filter((line): line is HostsLine & { type: 'entry' } => line.type === 'entry')
+      .filter(
+        (line): line is HostsLine & { type: 'entry'; ip: string; hostnames: string[] } =>
+          line.type === 'entry' && line.ip !== undefined && line.hostnames !== undefined,
+      )
       .map(({ ip, hostnames, comment }) => ({ ip, hostnames, comment }));
   }
 
@@ -147,8 +168,12 @@ export class Hosts {
       const lineIdx = lines.findIndex(
         (l) => l.type === 'entry' && l.ip === entries[existingIdx]!.ip,
       );
-      if (lineIdx >= 0 && lines[lineIdx]!.type === 'entry') {
-        const merged = [...new Set([...lines[lineIdx]!.hostnames, ...newHostnames])];
+      if (
+        lineIdx >= 0 &&
+        lines[lineIdx]!.type === 'entry' &&
+        lines[lineIdx]!.hostnames !== undefined
+      ) {
+        const merged = [...new Set([...lines[lineIdx]!.hostnames!, ...newHostnames])];
         const updated: HostsLine[] = [...lines];
         updated[lineIdx] = { ...lines[lineIdx]!, hostnames: merged };
         return updated;
@@ -171,7 +196,7 @@ export class Hosts {
       .map((line): HostsLine | null => {
         if (line.type !== 'entry') return line;
         if (line.ip === ipOrHostname) return null;
-        if (line.hostnames.includes(ipOrHostname)) {
+        if (line.hostnames?.includes(ipOrHostname)) {
           const filtered = line.hostnames.filter((h) => h !== ipOrHostname);
           return filtered.length > 0 ? { ...line, hostnames: filtered } : null;
         }
