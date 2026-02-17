@@ -60,7 +60,7 @@ describe('Hosts', () => {
       const lines = Hosts.parse(content);
       expect(lines[0]).toEqual({
         type: 'comment',
-        content: 'comment line',
+        comment: 'comment line',
         id: 1,
       });
       expect(lines[1]).toEqual({
@@ -104,7 +104,7 @@ describe('Hosts', () => {
     it('serializes entries back to hosts format', () => {
       const lines: HostsLine[] = [
         { type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] },
-        { type: 'comment', content: 'test' },
+        { type: 'comment', comment: 'test' },
         { type: 'empty' },
       ];
       const content = Hosts.serialize(lines);
@@ -123,7 +123,7 @@ describe('Hosts', () => {
   describe('getEntries', () => {
     it('returns only entry lines', () => {
       const lines: HostsLine[] = [
-        { type: 'comment', content: 'x' },
+        { type: 'comment', comment: 'x' },
         { type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] },
         { type: 'empty' },
         { type: 'entry', ip: '::1', hostnames: ['ip6-localhost'] },

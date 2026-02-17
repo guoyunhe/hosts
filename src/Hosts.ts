@@ -12,9 +12,8 @@ export interface HostsLine {
   /** For type 'entry' */
   ip?: string;
   hostnames?: string[];
+  /** For type 'entry' - inline comment; for type 'comment' - the comment text */
   comment?: string;
-  /** For type 'comment' */
-  content?: string;
 }
 
 /**
@@ -73,7 +72,7 @@ export class Hosts {
       if (commentStart === 0) {
         lines.push({
           type: 'comment',
-          content: trimmed.slice(1).trimStart(),
+          comment: trimmed.slice(1).trimStart(),
           id: lineNumber,
         });
         continue;
@@ -85,7 +84,7 @@ export class Hosts {
       if (dataPart === '') {
         lines.push({
           type: 'comment',
-          content: inlineComment ?? '',
+          comment: inlineComment ?? '',
           id: lineNumber,
         });
         continue;
@@ -120,7 +119,7 @@ export class Hosts {
     return lines
       .map((line) => {
         if (line.type === 'empty') return '';
-        if (line.type === 'comment') return line.content ? `# ${line.content}` : '#';
+        if (line.type === 'comment') return line.comment ? `# ${line.comment}` : '#';
         if (line.type === 'entry' && line.ip !== undefined && line.hostnames !== undefined) {
           const main = [line.ip, ...line.hostnames].join('\t');
           return line.comment ? `${main}\t# ${line.comment}` : main;
