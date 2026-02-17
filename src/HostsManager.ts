@@ -1,7 +1,10 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-/** A parsed hosts file entry mapping an IP to one or more hostnames */
+/**
+ * A parsed hosts file entry mapping an IP to one or more hostnames
+ * @since 1.0.0
+ */
 export interface HostsEntry {
   ip: string;
   hostnames: string[];
@@ -9,13 +12,19 @@ export interface HostsEntry {
   comment?: string;
 }
 
-/** A parsed line from the hosts file */
+/**
+ * A parsed line from the hosts file
+ * @since 1.0.0
+ */
 export type HostsLine =
   | { type: 'entry'; ip: string; hostnames: string[]; comment?: string }
   | { type: 'comment'; content: string }
   | { type: 'empty' };
 
-/** Options for HostsManager */
+/**
+ * Options for HostsManager
+ * @since 1.0.0
+ */
 export interface HostsManagerOptions {
   /** Custom path to the hosts file. If not set, uses the default for the current OS. */
   path?: string;
@@ -25,12 +34,14 @@ export interface HostsManagerOptions {
 
 /**
  * Manages hosts file reading, writing, and parsing across Windows, macOS, and Linux.
+ * @since 1.0.0
  */
 export class HostsManager {
   /**
    * Gets the default hosts file path for the current operating system.
    * - Windows: C:\\Windows\\System32\\drivers\\etc\\hosts
    * - macOS / Linux: /etc/hosts
+   * @since 1.0.0
    */
   static getDefaultPath(): string {
     if (process.platform === 'win32') {
@@ -43,6 +54,7 @@ export class HostsManager {
   /**
    * Parses hosts file content into structured lines.
    * Handles entries, comments (#), and empty lines.
+   * @since 1.0.0
    */
   static parse(content: string): HostsLine[] {
     const lines: HostsLine[] = [];
@@ -94,6 +106,7 @@ export class HostsManager {
 
   /**
    * Serializes parsed lines back to hosts file format.
+   * @since 1.0.0
    */
   static serialize(lines: HostsLine[]): string {
     return lines
@@ -111,6 +124,7 @@ export class HostsManager {
 
   /**
    * Returns only the entry lines (IP + hostnames), excluding comments and empty lines.
+   * @since 1.0.0
    */
   static getEntries(lines: HostsLine[]): HostsEntry[] {
     return lines
@@ -120,6 +134,7 @@ export class HostsManager {
 
   /**
    * Adds or updates an entry. If the IP exists, appends hostnames; otherwise inserts a new entry.
+   * @since 1.0.0
    */
   static addEntry(lines: HostsLine[], ip: string, ...hostnames: string[]): HostsLine[] {
     const entries = HostsManager.getEntries(lines);
@@ -148,6 +163,7 @@ export class HostsManager {
   /**
    * Removes entries matching the given IP or hostname.
    * When matching by IP, removes the entire entry. When matching by hostname, removes only that hostname.
+   * @since 1.0.0
    */
   static removeEntry(lines: HostsLine[], ipOrHostname: string): HostsLine[] {
     return lines
@@ -171,13 +187,17 @@ export class HostsManager {
     this.#encoding = options.encoding ?? 'utf-8';
   }
 
-  /** Returns the hosts file path for the current platform */
+  /**
+   * Returns the hosts file path for the current platform
+   * @since 1.0.0
+   */
   get path(): string {
     return this.#path;
   }
 
   /**
    * Reads the hosts file and returns parsed lines.
+   * @since 1.0.0
    */
   async read(): Promise<HostsLine[]> {
     const content = await readFile(this.#path, this.#encoding);
@@ -186,6 +206,7 @@ export class HostsManager {
 
   /**
    * Writes the given lines to the hosts file.
+   * @since 1.0.0
    */
   async write(lines: HostsLine[]): Promise<void> {
     const content = HostsManager.serialize(lines);
