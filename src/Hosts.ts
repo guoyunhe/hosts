@@ -2,17 +2,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 /**
- * A parsed hosts file entry mapping an IP to one or more hostnames
- * @since 1.0.0
- */
-export interface HostsEntry {
-  ip: string;
-  hostnames: string[];
-  /** Inline comment after the entry, if any */
-  comment?: string;
-}
-
-/**
  * A parsed line from the hosts file.
  * Use {@link HostsLine.type} to discriminate; other properties are set based on type.
  * @since 1.0.0
@@ -145,13 +134,11 @@ export class Hosts {
    * Returns only the entry lines (IP + hostnames) from the given lines, excluding comments and empty lines.
    * @since 1.0.0
    */
-  static getEntries(lines: HostsLine[]): HostsEntry[] {
-    return lines
-      .filter(
-        (line): line is HostsLine & { type: 'entry'; ip: string; hostnames: string[] } =>
-          line.type === 'entry' && line.ip !== undefined && line.hostnames !== undefined,
-      )
-      .map(({ ip, hostnames, comment }) => ({ ip, hostnames, comment }));
+  static getEntries(lines: HostsLine[]): HostsLine[] {
+    return lines.filter(
+      (line): line is HostsLine & { type: 'entry'; ip: string; hostnames: string[] } =>
+        line.type === 'entry' && line.ip !== undefined && line.hostnames !== undefined,
+    );
   }
 
   /**

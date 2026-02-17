@@ -1,1 +1,1 @@
-export { Hosts, type HostsEntry, type HostsLine, type HostsOptions } from './Hosts.js';
+export { Hosts, type HostsLine, type HostsOptions } from './Hosts.js';

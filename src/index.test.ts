@@ -34,13 +34,13 @@ describe('Hosts', () => {
         type: 'entry',
         ip: '127.0.0.1',
         hostnames: ['localhost'],
-        lineNumber: 1,
+        id: 1,
       });
       expect(lines[1]).toEqual({
         type: 'entry',
         ip: '192.168.1.1',
         hostnames: ['router.local'],
-        lineNumber: 2,
+        id: 2,
       });
     });
 
@@ -51,7 +51,7 @@ describe('Hosts', () => {
         type: 'entry',
         ip: '127.0.0.1',
         hostnames: ['localhost', 'localhost.localdomain'],
-        lineNumber: 1,
+        id: 1,
       });
     });
 
@@ -61,14 +61,14 @@ describe('Hosts', () => {
       expect(lines[0]).toEqual({
         type: 'comment',
         content: 'comment line',
-        lineNumber: 1,
+        id: 1,
       });
       expect(lines[1]).toEqual({
         type: 'entry',
         ip: '127.0.0.1',
         hostnames: ['localhost'],
         comment: 'inline comment',
-        lineNumber: 2,
+        id: 2,
       });
     });
 
@@ -76,9 +76,9 @@ describe('Hosts', () => {
       const content = '127.0.0.1 localhost\n\n\n';
       const lines = Hosts.parse(content);
       expect(lines).toHaveLength(4);
-      expect(lines[1]).toEqual({ type: 'empty', lineNumber: 2 });
-      expect(lines[2]).toEqual({ type: 'empty', lineNumber: 3 });
-      expect(lines[3]).toEqual({ type: 'empty', lineNumber: 4 });
+      expect(lines[1]).toEqual({ type: 'empty', id: 2 });
+      expect(lines[2]).toEqual({ type: 'empty', id: 3 });
+      expect(lines[3]).toEqual({ type: 'empty', id: 4 });
     });
 
     it('handles Windows line endings', () => {
@@ -89,13 +89,13 @@ describe('Hosts', () => {
         type: 'entry',
         ip: '127.0.0.1',
         hostnames: ['localhost'],
-        lineNumber: 1,
+        id: 1,
       });
       expect(lines[1]).toEqual({
         type: 'entry',
         ip: '192.168.1.1',
         hostnames: ['host'],
-        lineNumber: 2,
+        id: 2,
       });
     });
   });
@@ -130,8 +130,16 @@ describe('Hosts', () => {
       ];
       const entries = Hosts.getEntries(lines);
       expect(entries).toHaveLength(2);
-      expect(entries[0]).toEqual({ ip: '127.0.0.1', hostnames: ['localhost'] });
-      expect(entries[1]).toEqual({ ip: '::1', hostnames: ['ip6-localhost'] });
+      expect(entries[0]).toEqual({
+        type: 'entry',
+        ip: '127.0.0.1',
+        hostnames: ['localhost'],
+      });
+      expect(entries[1]).toEqual({
+        type: 'entry',
+        ip: '::1',
+        hostnames: ['ip6-localhost'],
+      });
     });
   });
 
