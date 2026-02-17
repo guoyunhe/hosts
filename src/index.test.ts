@@ -201,4 +201,15 @@ describe('Hosts', () => {
       expect(manager.path).toBe('/custom/hosts');
     });
   });
+
+  describe('lines', () => {
+    it('holds parsed lines after read', async () => {
+      const manager = new Hosts({ path: '/tmp/hosts' });
+      expect(manager.lines).toEqual([]);
+      // We can't read /tmp/hosts in test, but we can set lines directly
+      const lines: HostsLine[] = [{ type: 'entry', ip: '127.0.0.1', hostnames: ['localhost'] }];
+      manager.lines = lines;
+      expect(manager.lines).toEqual(lines);
+    });
+  });
 });

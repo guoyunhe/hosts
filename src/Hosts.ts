@@ -193,6 +193,7 @@ export class Hosts {
 
   readonly #path: string;
   readonly #encoding: BufferEncoding;
+  #lines: HostsLine[] = [];
 
   constructor(options: HostsOptions = {}) {
     this.#path = options.path ?? Hosts.getDefaultPath();
@@ -208,20 +209,35 @@ export class Hosts {
   }
 
   /**
-   * Reads the hosts file and returns parsed lines.
+   * Parsed lines. Populated by {@link read}.
+   * @since 1.0.0
+   */
+  get lines(): HostsLine[] {
+    return this.#lines;
+  }
+
+  set lines(value: HostsLine[]) {
+    this.#lines = value;
+  }
+
+  /**
+   * Reads the hosts file and returns parsed lines. Populates {@link lines}.
    * @since 1.0.0
    */
   async read(): Promise<HostsLine[]> {
     const content = await readFile(this.#path, this.#encoding);
-    return Hosts.parse(content);
+    this.#lines = Hosts.parse(content);
+    return this.#lines;
   }
 
   /**
-   * Writes the given lines to the hosts file.
+   * Writes the given lines to the hosts file. Uses {@link lines} if no argument is provided.
    * @since 1.0.0
    */
-  async write(lines: HostsLine[]): Promise<void> {
-    const content = Hosts.serialize(lines);
+  async write(lines?: HostsLine[]): Promise<void> {
+    const toWrite = lines ?? this.#lines;
+    const content = Hosts.serialize(toWrite);
     await writeFile(this.#path, content, this.#encoding);
+    this.#lines = toWrite;
   }
 }
