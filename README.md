@@ -14,5 +14,17 @@ npm i -S @guoyunhe/hosts
 ## Example
 
 ```js
-import { Hosts } from '@guoyunhe/hosts';
+import { HostsManager } from '@guoyunhe/hosts';
+
+const manager = new HostsManager();
+
+// Read and parse
+const lines = await manager.read();
+
+// Add entry
+const updated = HostsManager.addEntry(lines, '127.0.0.1', 'example.local');
+await manager.write(updated);
+
+// Custom path (e.g. for testing)
+const custom = new HostsManager({ path: '/tmp/hosts' });
 ```
